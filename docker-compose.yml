@@ -2,7 +2,9 @@ name: affine
 
 services:
   affine:
-    image: ghcr.io/toeverything/affine:${AFFINE_REVISION:-stable}
+    build:
+      context: .
+      dockerfile: .github/deployment/node/Dockerfile
     container_name: affine_server
     restart: unless-stopped
     ports:
@@ -33,7 +35,9 @@ services:
         condition: service_completed_successfully
 
   affine_migration:
-    image: ghcr.io/toeverything/affine:${AFFINE_REVISION:-stable}
+    build:
+      context: .
+      dockerfile: .github/deployment/node/Dockerfile
     container_name: affine_migration_job
     command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
     volumes:

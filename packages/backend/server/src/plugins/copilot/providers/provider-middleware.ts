@@ -77,6 +77,15 @@ const DEFAULT_MIDDLEWARE_BY_TYPE: Record<
       text: ['citation_footnote', 'callout'],
     },
   },
+  [CopilotProviderType.Ollama]: {
+    rust: {
+      request: ['normalize_messages'],
+      stream: ['stream_event_normalize', 'citation_indexing'],
+    },
+    node: {
+      text: ['citation_footnote', 'callout'],
+    },
+  },
   [CopilotProviderType.FAL]: {},
 };
 

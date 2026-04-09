@@ -19,6 +19,7 @@ const LEGACY_PROVIDER_ORDER: CopilotProviderType[] = [
   CopilotProviderType.Anthropic,
   CopilotProviderType.AnthropicVertex,
   CopilotProviderType.Morph,
+  CopilotProviderType.Ollama,
 ];
 
 const LEGACY_PROVIDER_PRIORITY = LEGACY_PROVIDER_ORDER.reduce(

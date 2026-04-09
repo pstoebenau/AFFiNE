@@ -14,6 +14,7 @@ import { CloudflareWorkersAIConfig } from './providers/cloudflare';
 import type { FalConfig } from './providers/fal';
 import { GeminiGenerativeConfig, GeminiVertexConfig } from './providers/gemini';
 import { MorphConfig } from './providers/morph';
+import { OllamaConfig } from './providers/ollama';
 import { OpenAIConfig } from './providers/openai';
 import { PerplexityConfig } from './providers/perplexity';
 import {
@@ -32,6 +33,7 @@ export type CopilotProviderConfigMap = {
   [CopilotProviderType.Anthropic]: AnthropicOfficialConfig;
   [CopilotProviderType.AnthropicVertex]: AnthropicVertexConfig;
   [CopilotProviderType.Morph]: MorphConfig;
+  [CopilotProviderType.Ollama]: OllamaConfig;
 };
 
 export type ProviderSpecificConfig =
@@ -152,6 +154,11 @@ const MorphConfigShape = z.object({
   apiKey: z.string().optional(),
 });
 
+const OllamaConfigShape = z.object({
+  baseURL: z.string().optional(),
+  apiKey: z.string().optional(),
+});
+
 const CopilotProviderProfileShape = z.discriminatedUnion('type', [
   CopilotProviderProfileBaseShape.extend({
     type: z.literal(CopilotProviderType.OpenAI),
@@ -189,6 +196,10 @@ const CopilotProviderProfileShape = z.discriminatedUnion('type', [
     type: z.literal(CopilotProviderType.Morph),
     config: MorphConfigShape,
   }),
+  CopilotProviderProfileBaseShape.extend({
+    type: z.literal(CopilotProviderType.Ollama),
+    config: OllamaConfigShape,
+  }),
 ]);
 
 const CopilotProviderDefaultsShape = z.object({
@@ -225,6 +236,7 @@ declare global {
         anthropic: ConfigItem<AnthropicOfficialConfig>;
         anthropicVertex: ConfigItem<AnthropicVertexConfig>;
         morph: ConfigItem<MorphConfig>;
+        ollama: ConfigItem<OllamaConfig>;
       };
     };
   }
@@ -316,6 +328,12 @@ defineModuleConfig('copilot', {
   'providers.morph': {
     desc: 'The config for the morph provider.',
     default: {},
+  },
+  'providers.ollama': {
+    desc: 'The config for the Ollama provider.',
+    default: {
+      baseURL: 'http://localhost:11434/v1',
+    },
   },
   unsplash: {
     desc: 'The config for the unsplash key.',
