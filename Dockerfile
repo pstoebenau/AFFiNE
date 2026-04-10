@@ -80,6 +80,11 @@ RUN for f in server-native.x64.node server-native.arm64.node server-native.armv7
 # Bundle the server with rspack
 RUN yarn workspace @affine/server build
 
+# Replace stub .node files in dist/ with the real native binary
+RUN for f in packages/backend/native/server-native.*.node; do \
+      [ -s "$f" ] && cp "$f" packages/backend/server/dist/ ; \
+    done
+
 # Install openssl before prisma generate (needed for engine detection)
 RUN apt-get update && \
     apt-get install -y --no-install-recommends openssl && \
@@ -121,6 +126,10 @@ WORKDIR /app
 RUN corepack enable
 
 COPY --from=assets /app /app
+
+# Yarn config needed for self-host-predeploy.js which calls `yarn predeploy`
+COPY .yarnrc.yml /app/.yarnrc.yml
+COPY .yarn/releases/ /app/.yarn/releases/
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends openssl libjemalloc2 && \
