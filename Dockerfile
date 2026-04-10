@@ -82,7 +82,7 @@ RUN yarn workspace @affine/server build
 
 # Replace stub .node files in dist/ with the real native binary
 RUN for f in packages/backend/native/server-native.*.node; do \
-      [ -s "$f" ] && cp "$f" packages/backend/server/dist/ ; \
+      [ -s "$f" ] && cp "$f" packages/backend/server/dist/ || true; \
     done
 
 # Install openssl before prisma generate (needed for engine detection)
