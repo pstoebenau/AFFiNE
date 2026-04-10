@@ -123,13 +123,7 @@ RUN AFFINE_DOCKER_CLEAN=1 TARGETARCH="${TARGETARCH}" TARGETVARIANT="${TARGETVARI
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
-RUN corepack enable
-
 COPY --from=assets /app /app
-
-# Yarn config needed for self-host-predeploy.js which calls `yarn predeploy`
-COPY .yarnrc.yml /app/.yarnrc.yml
-COPY .yarn/releases/ /app/.yarn/releases/
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends openssl libjemalloc2 && \
