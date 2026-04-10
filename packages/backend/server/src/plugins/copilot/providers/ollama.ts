@@ -39,8 +39,8 @@ const ModelListSchema = z.object({
 
 const OLLAMA_ATTACHMENT_CAPABILITY: ModelAttachmentCapability = {
   kinds: ['image', 'audio'],
-  sourceKinds: ['data'],
-  allowRemoteUrls: false,
+  sourceKinds: ['url', 'data'],
+  allowRemoteUrls: true,
 };
 
 function createGemma4Capability(
@@ -142,6 +142,75 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
     );
   }
 
+  /**
+   * Ollama doesn't support image URLs, only base64 data.
+   * Download any URL attachments and convert them to base64 data URIs.
+   */
+  private async convertUrlAttachmentsToBase64(
+    messages: PromptMessage[]
+  ): Promise<PromptMessage[]> {
+    const result: PromptMessage[] = [];
+    for (const message of messages) {
+      if (!Array.isArray(message.attachments) || !message.attachments.length) {
+        result.push(message);
+        continue;
+      }
+
+      const convertedAttachments: typeof message.attachments = [];
+      for (const attachment of message.attachments) {
+        if (typeof attachment === 'string' && /^https?:\/\//.test(attachment)) {
+          try {
+            const response = await fetch(attachment);
+            const buffer = Buffer.from(await response.arrayBuffer());
+            const contentType =
+              response.headers.get('content-type') || 'image/png';
+            const base64 = buffer.toString('base64');
+            convertedAttachments.push(
+              `data:${contentType};base64,${base64}`
+            );
+          } catch (e) {
+            this.logger.error(
+              `Failed to download attachment: ${attachment}`,
+              e
+            );
+            convertedAttachments.push(attachment);
+          }
+        } else if (
+          typeof attachment === 'object' &&
+          'kind' in attachment &&
+          attachment.kind === 'url' &&
+          /^https?:\/\//.test(attachment.url)
+        ) {
+          try {
+            const response = await fetch(attachment.url);
+            const buffer = Buffer.from(await response.arrayBuffer());
+            const contentType =
+              attachment.mimeType ||
+              response.headers.get('content-type') ||
+              'image/png';
+            const base64 = buffer.toString('base64');
+            convertedAttachments.push({
+              kind: 'data',
+              data: base64,
+              mimeType: contentType,
+            });
+          } catch (e) {
+            this.logger.error(
+              `Failed to download attachment: ${attachment.url}`,
+              e
+            );
+            convertedAttachments.push(attachment);
+          }
+        } else {
+          convertedAttachments.push(attachment);
+        }
+      }
+
+      result.push({ ...message, attachments: convertedAttachments });
+    }
+    return result;
+  }
+
   private isReasoningModel(model: string): boolean {
     return model.startsWith('gemma4');
   }
@@ -172,12 +241,14 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
 
     try {
       metrics.ai.counter('chat_text_calls').add(1, this.metricLabels(model.id));
+      const convertedMessages =
+        await this.convertUrlAttachmentsToBase64(messages);
       const tools = await this.getTools(options, model.id);
       const middleware = this.getActiveProviderMiddleware();
       const cap = this.getAttachCapability(model, ModelOutputType.Text);
       const { request } = await buildNativeRequest({
         model: model.id,
-        messages,
+        messages: convertedMessages,
         options,
         tools,
         attachmentCapability: cap,
@@ -185,7 +256,7 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
         middleware,
       });
       const adapter = this.createNativeAdapter(tools, middleware.node?.text);
-      return await adapter.text(request, options.signal, messages);
+      return await adapter.text(request, options.signal, convertedMessages);
     } catch (e: any) {
       metrics.ai
         .counter('chat_text_errors')
@@ -212,12 +283,14 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
       metrics.ai
         .counter('chat_text_stream_calls')
         .add(1, this.metricLabels(model.id));
+      const convertedMessages =
+        await this.convertUrlAttachmentsToBase64(messages);
       const tools = await this.getTools(options, model.id);
       const middleware = this.getActiveProviderMiddleware();
       const cap = this.getAttachCapability(model, ModelOutputType.Text);
       const { request } = await buildNativeRequest({
         model: model.id,
-        messages,
+        messages: convertedMessages,
         options,
         tools,
         attachmentCapability: cap,
@@ -228,7 +301,7 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
       for await (const chunk of adapter.streamText(
         request,
         options.signal,
-        messages
+        convertedMessages
       )) {
         yield chunk;
       }
@@ -257,12 +330,14 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
       metrics.ai
         .counter('chat_object_stream_calls')
         .add(1, this.metricLabels(model.id));
+      const convertedMessages =
+        await this.convertUrlAttachmentsToBase64(messages);
       const tools = await this.getTools(options, model.id);
       const middleware = this.getActiveProviderMiddleware();
       const cap = this.getAttachCapability(model, ModelOutputType.Object);
       const { request } = await buildNativeRequest({
         model: model.id,
-        messages,
+        messages: convertedMessages,
         options,
         tools,
         attachmentCapability: cap,
@@ -273,7 +348,7 @@ export class OllamaProvider extends CopilotProvider<OllamaConfig> {
       for await (const chunk of adapter.streamObject(
         request,
         options.signal,
-        messages
+        convertedMessages
       )) {
         yield chunk;
       }
