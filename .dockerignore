@@ -21,6 +21,4 @@
 # OS noise
 .DS_Store
 
-# Sourcemaps (keep server sourcemap for backend stacktraces)
-**/*.map
-!packages/backend/server/dist/main.js.map
+# Sourcemaps are cleaned up by docker-clean.mjs during the build

@@ -4,7 +4,8 @@ services:
   affine:
     build:
       context: .
-      dockerfile: .github/deployment/node/Dockerfile
+      dockerfile: Dockerfile
+    image: affine:local-build
     container_name: affine_server
     restart: unless-stopped
     ports:
@@ -35,9 +36,7 @@ services:
         condition: service_completed_successfully
 
   affine_migration:
-    build:
-      context: .
-      dockerfile: .github/deployment/node/Dockerfile
+    image: affine:local-build
     container_name: affine_migration_job
     command: ['sh', '-c', 'node ./scripts/self-host-predeploy.js']
     volumes:
