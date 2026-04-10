@@ -71,8 +71,19 @@ WORKDIR /app
 # Copy native binaries from native-build stage
 COPY --from=native-build /app/packages/backend/native/server-native.*.node /app/packages/backend/native/
 
+# Create empty stubs for non-target architectures so rspack can resolve all
+# require() paths at bundle time (only the real arch binary is used at runtime)
+RUN for f in server-native.x64.node server-native.arm64.node server-native.armv7.node; do \
+      [ -f packages/backend/native/$f ] || touch packages/backend/native/$f; \
+    done
+
 # Bundle the server with rspack
 RUN yarn workspace @affine/server build
+
+# Install openssl before prisma generate (needed for engine detection)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssl && \
+    rm -rf /var/lib/apt/lists/*
 
 # Switch to production dependencies
 RUN yarn workspaces focus @affine/server --production && \
