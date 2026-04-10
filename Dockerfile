@@ -68,22 +68,17 @@ RUN yarn affine @affine/mobile build
 FROM deps AS server-build
 WORKDIR /app
 
-# Copy native binaries from native-build stage
-COPY --from=native-build /app/packages/backend/native/server-native.*.node /app/packages/backend/native/
+# Copy the native binary from native-build stage (napi outputs server-native.node)
+COPY --from=native-build /app/packages/backend/native/server-native.node /app/packages/backend/native/server-native.node
 
-# Create empty stubs for non-target architectures so rspack can resolve all
-# require() paths at bundle time (only the real arch binary is used at runtime)
-RUN for f in server-native.x64.node server-native.arm64.node server-native.armv7.node; do \
-      [ -f packages/backend/native/$f ] || touch packages/backend/native/$f; \
-    done
+# Create arch-named copies of the real binary + stubs for other architectures
+# so rspack can resolve all require() paths in index.js at bundle time
+RUN cp packages/backend/native/server-native.node packages/backend/native/server-native.x64.node && \
+    cp packages/backend/native/server-native.node packages/backend/native/server-native.arm64.node && \
+    cp packages/backend/native/server-native.node packages/backend/native/server-native.armv7.node
 
 # Bundle the server with rspack
 RUN yarn workspace @affine/server build
-
-# Replace stub .node files in dist/ with the real native binary
-RUN for f in packages/backend/native/server-native.*.node; do \
-      [ -s "$f" ] && cp "$f" packages/backend/server/dist/ || true; \
-    done
 
 # Install openssl before prisma generate (needed for engine detection)
 RUN apt-get update && \
