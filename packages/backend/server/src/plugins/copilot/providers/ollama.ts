@@ -12,11 +12,11 @@ import {
 } from '../../../native';
 import type { NodeTextMiddleware } from '../config';
 import type { CopilotToolSet } from '../tools';
-import { GEMINI_ATTACHMENT_CAPABILITY } from './attachments';
 import { buildNativeRequest, NativeProviderAdapter } from './native';
 import { CopilotProvider } from './provider';
 import type {
   CopilotChatOptions,
+  ModelAttachmentCapability,
   ModelCapability,
   ModelConditions,
   PromptMessage,
@@ -37,6 +37,12 @@ const ModelListSchema = z.object({
   data: z.array(z.object({ id: z.string() })),
 });
 
+const OLLAMA_ATTACHMENT_CAPABILITY: ModelAttachmentCapability = {
+  kinds: ['image', 'audio'],
+  sourceKinds: ['data'],
+  allowRemoteUrls: false,
+};
+
 function createGemma4Capability(
   output: ModelCapability['output'],
   options: Pick<ModelCapability, 'defaultForOutputType'> = {}
@@ -44,8 +50,8 @@ function createGemma4Capability(
   return {
     input: [ModelInputType.Text, ModelInputType.Image, ModelInputType.Audio],
     output,
-    attachments: GEMINI_ATTACHMENT_CAPABILITY,
-    structuredAttachments: GEMINI_ATTACHMENT_CAPABILITY,
+    attachments: OLLAMA_ATTACHMENT_CAPABILITY,
+    structuredAttachments: OLLAMA_ATTACHMENT_CAPABILITY,
     ...options,
   };
 }
