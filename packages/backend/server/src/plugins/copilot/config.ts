@@ -250,17 +250,17 @@ defineModuleConfig('copilot', {
   scenarios: {
     desc: 'Use custom models in scenarios and override default settings.',
     default: {
-      override_enabled: false,
+      override_enabled: true,
       scenarios: {
-        audio_transcribing: 'gemini-2.5-flash',
-        chat: 'gemini-2.5-flash',
-        embedding: 'gemini-embedding-001',
-        image: 'gpt-image-1',
-        coding: 'claude-sonnet-4-5@20250929',
-        complex_text_generation: 'gpt-5-mini',
-        quick_decision_making: 'gpt-5-mini',
-        quick_text_generation: 'gemini-2.5-flash',
-        polish_and_summarize: 'gemini-2.5-flash',
+        audio_transcribing: 'gemma4:e4b',
+        chat: 'gemma4:e4b',
+        embedding: 'gemma4:e4b',
+        image: 'gemma4:e4b',
+        coding: 'gemma4:e4b',
+        complex_text_generation: 'gemma4:e4b',
+        quick_decision_making: 'gemma4:e4b',
+        quick_text_generation: 'gemma4:e4b',
+        polish_and_summarize: 'gemma4:e4b',
       },
     },
   },
@@ -332,7 +332,7 @@ defineModuleConfig('copilot', {
   'providers.ollama': {
     desc: 'The config for the Ollama provider.',
     default: {
-      baseURL: 'http://localhost:11434/v1',
+      baseURL: 'http://self-host-ollama-qcmbnp-ollama-1:11434/v1',
     },
   },
   unsplash: {
